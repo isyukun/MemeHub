@@ -1,42 +1,30 @@
 <x-app-layout>
-    <header class="bg-white border-b border-gray-100 py-6">
-        <div class="max-w-3xl mx-auto px-6">
-            <h1 class="text-2xl font-black text-gray-900 uppercase tracking-tighter">Feed Utama</h1>
-            <p class="text-sm text-gray-400 font-bold uppercase tracking-widest">Temukan tawa hari ini</p>
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 py-4">
+        <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <h1 class="text-xl font-black text-gray-900 uppercase tracking-tighter">MemeHub Feed</h1>
+            <x-meme.create-post-box-mini /> 
         </div>
     </header>
 
-    <div class="py-8 bg-slate-50 min-h-screen">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    <div class="py-6 bg-slate-50 min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
             
-            @if($trendingMemes->count() > 0)
-            <div class="mb-10">
-                <h3 class="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-4 ml-1">🔥 Sedang Trending</h3>
-                <div class="flex space-x-4 overflow-x-auto pb-4 custom-scrollbar">
-                    @foreach($trendingMemes as $trending)
-                        <div class="min-w-[120px] h-[120px] rounded-2xl overflow-hidden border-2 border-white shadow-md hover:scale-105 transition duration-300">
-                            <img src="{{ asset('storage/' . $trending->image_path) }}" class="w-full h-full object-cover">
-                        </div>
-                    @endforeach
-                </div>
+            <div class="flex gap-2 overflow-x-auto pb-6 mb-4 custom-scrollbar">
+                @foreach($categories as $category)
+                    <a href="#" class="px-5 py-2 bg-white rounded-full font-bold text-xs uppercase tracking-widest text-gray-600 border hover:border-indigo-500 hover:text-indigo-600 transition shadow-sm whitespace-nowrap">
+                        {{ is_object($category) ? $category->name : $category }}
+                    </a>
+                @endforeach
             </div>
-            @endif
 
-            <x-meme.category-list :categories="$categories" />
-
-            <x-meme.create-post-box :categories="$categories" />
-
-            <div class="space-y-8 animate-fadeIn">
+            <div class="masonry-grid">
                 @forelse($memes as $meme)
-                    <div class="group">
+                    <div class="masonry-item">
                         <x-meme.card :meme="$meme" />
                     </div>
                 @empty
-                    <div class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
-                        <div class="text-6xl mb-4 grayscale hover:grayscale-0 transition cursor-pointer">🎭</div>
-                        <p class="text-gray-400 font-black uppercase tracking-widest text-sm">
-                            Gak ada meme di sini. <span class="text-indigo-600 underline">Upload meme pertamamu!</span>
-                        </p>
+                    <div class="py-20 text-center">
+                        <p class="text-gray-400 font-bold uppercase tracking-widest">Belum ada meme, jadilah yang pertama!</p>
                     </div>
                 @endforelse
             </div>
@@ -44,10 +32,21 @@
     </div>
 
     <style>
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .masonry-grid {
+            column-count: 2;
+            column-gap: 1.5rem;
+            width: 100%;
+        }
+        @media (min-width: 768px) { .masonry-grid { column-count: 3; } }
+        @media (min-width: 1024px) { .masonry-grid { column-count: 4; } }
+        
+        .masonry-item {
+            display: inline-block; /* Kunci agar card tidak terpotong */
+            width: 100%;
+            margin-bottom: 1.5rem;
+            break-inside: avoid;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </x-app-layout>
