@@ -13,19 +13,25 @@ class MemeController extends Controller
 {
     public function index(Request $request) 
     {
-        // Cukup panggil scope filter dengan array request
-        $memes = Meme::with(['user', 'likes', 'comments'])
-            ->latest()
-            ->filter($request->only(['search', 'category']))
-            ->get();
+        // 1. Ambil data dengan filter, tapi pastikan kita tidak memfilter 
+        // secara tidak sengaja jika kategori yang dikirim tidak valid.
+        $query = Meme::with(['user', 'likes', 'comments'])->latest();
 
-        // Trending memes tetap aman
+        // Cek apakah ada filter kategori dan apakah valid
+        if ($request->has('category') && in_array($request->category, ['funny', 'dark', 'wholesome', 'savage'])) {
+            $query->filter($request->only(['search', 'category']));
+        }
+
+        $memes = $query->get();
+
+        // 2. Samakan kategori dengan yang ada di StoreMemeRequest
+        // Kita gunakan array yang sama dengan aturan validasi
+        $categories = ['funny', 'dark', 'wholesome', 'savage'];
+        
         $trendingMemes = Meme::withCount('likes')
             ->orderBy('likes_count', 'desc')
             ->take(3)
             ->get();
-
-        $categories = ['Umum', 'Menulis', 'Musik', 'Coding', 'Olahraga'];
         
         return view('dashboard', compact('memes', 'categories', 'trendingMemes'));
     }
