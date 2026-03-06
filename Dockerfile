@@ -1,36 +1,25 @@
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
-# Install sistem dependensi
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    zip \
-    unzip \
-    git \
+# Install Nginx dan ekstensi PHP
+RUN apt-get update && apt-get install -y nginx libpng-dev libjpeg-dev libfreetype6-dev zip unzip git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
-# 1. Matikan SEMUA modul MPM yang mungkin konflik
-RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf
-
-# 2. Hanya aktifkan SATU modul MPM (prefork adalah yang paling stabil untuk PHP)
-RUN a2enmod mpm_prefork
-
-# 3. Aktifkan rewrite
-RUN a2enmod rewrite
-
-# Setup DocumentRoot ke folder public
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Copy konfigurasi Nginx agar Laravel bisa berjalan
+RUN echo 'server { \
+    listen 80; \
+    root /var/www/html/public; \
+    index index.php; \
+    location / { try_files $uri $uri/ /index.php?$query_string; } \
+    location ~ \.php$ { fastcgi_pass 127.0.0.1:9000; fastcgi_index index.php; include fastcgi_params; fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; } \
+}' > /etc/nginx/sites-available/default
 
 WORKDIR /var/www/html
 COPY . .
 
-# Install Composer
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader
 
-# Permission
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-EXPOSE 80
+# Menjalankan Nginx dan PHP-FPM
+CMD service nginx start && php-fpm
